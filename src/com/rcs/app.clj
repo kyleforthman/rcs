@@ -8,12 +8,12 @@
             [ring.adapter.jetty9 :as jetty]
             [cheshire.core :as cheshire]))
 
-(defn set-foo [{:keys [session params] :as ctx}]
+(defn set-name [{:keys [session params] :as ctx}]
   (biff/submit-tx ctx
     [{:db/op :update
       :db/doc-type :user
       :xt/id (:uid session)
-      :user/foo (:foo params)}])
+      :user/name (:name params)}])
   {:status 303
    :headers {"location" "/app"}})
 
@@ -92,7 +92,7 @@
       (map message (sort-by :msg/sent-at #(compare %2 %1) messages))]]))
 
 (defn app [{:keys [session biff/db] :as ctx}]
-  (let [{:user/keys [email foo bar]} (xt/entity db (:uid session))]
+  (let [{:user/keys [email name bar]} (xt/entity db (:uid session))]
     (ui/page
      {}
      [:div "Signed in as " email ". "
@@ -104,12 +104,12 @@
       "."]
      [:.h-6]
      (biff/form
-      {:action "/app/set-foo"}
-      [:label.block {:for "foo"} "Foo: "
-       [:span.font-mono (pr-str foo)]]
+      {:action "/app/set-name"}
+      [:label.block {:for "name"} "Name: "
+       [:span.font-mono (pr-str name)]]
       [:.h-1]
       [:.flex
-       [:input.w-full#foo {:type "text" :name "foo" :value foo}]
+       [:input.w-full#foo {:type "text" :name "name" :value name}]
        [:.w-3]
        [:button.btn {:type "submit"} "Update"]]
       [:.h-1]
@@ -146,7 +146,7 @@
   {:static {"/about/" about-page}
    :routes ["/app" {:middleware [mid/wrap-signed-in]}
             ["" {:get app}]
-            ["/set-foo" {:post set-foo}]
+            ["/set-name" {:post set-name}]
             ["/set-bar" {:post set-bar}]
             ["/chat" {:get ws-handler}]]
    :api-routes [["/api/echo" {:post echo}]]

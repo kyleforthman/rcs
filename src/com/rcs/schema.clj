@@ -6,7 +6,7 @@
           [:xt/id                     :user/id]
           [:user/email                :string]
           [:user/joined-at            inst?]
-          [:user/foo {:optional true} :string]
+          [:user/name {:optional true} :string]
           [:user/bar {:optional true} :string]]
 
    :msg/id :uuid
