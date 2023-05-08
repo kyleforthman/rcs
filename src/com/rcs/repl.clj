@@ -7,6 +7,16 @@
 (defn get-context []
   (biff/assoc-db @main/system))
 
+(defn get-db []
+  (:biff/db (get-context)))
+
+(defn fq
+  "List all entities in the database."
+  [db]
+  (q db
+     '{:find [(pull e [*])]
+       :where [[e :xt/id]]}))
+
 (defn add-fixtures []
   (biff/submit-tx (get-context)
     (-> (io/resource "fixtures.edn")
@@ -20,6 +30,8 @@
   ;; database by running `rm -r storage/xtdb` (DON'T run that in prod),
   ;; restarting your app, and calling add-fixtures again.
   (add-fixtures)
+
+  (fq (:biff/db (get-context)))
 
   (let [{:keys [biff/db] :as ctx} (get-context)]
     (q db
