@@ -129,11 +129,18 @@
     [:div
      [:.h-3]
      [:div "Notes: "
-      (for [note notes]
-        [:div
-         (:note/text note)
-         [:.h-1]])]]
+       [:div.flex.flex-wrap
+         (for [note notes]
+           [:div {:class "w-1/3 md:w-1/4 lg:w-1/5 px-2 mb-4"}
+             [:div.flex.flex-col.bg-white.rounded-md.shadow.p-4.mb-2
+               [:div.text-lg.font-bold
+                 (:note/title note)]
+               [:div.text-md
+                 (:note/text note)]
+              [:.h-1]]])]]]
     [:div "You have no notes."]))
+
+
 
 
 (defn app [{:keys [session biff/db] :as ctx}]

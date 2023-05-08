@@ -29,6 +29,7 @@
    :note [:map {:closed true}
           [:xt/id :note/id]
           [:note/owner :user/id]
+          [:note/title {:optional true} :string]
           [:note/text :string]
           [:note/timestamp inst?]]
 
