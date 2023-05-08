@@ -8,12 +8,45 @@
             [ring.adapter.jetty9 :as jetty]
             [cheshire.core :as cheshire]))
 
+(defn name-form [name]
+  (biff/form
+   {:action "/app/set-name"}
+   [:label.block {:for "name"} "Name: "
+    [:span.font-mono name]]
+   [:.h-1]
+   [:.flex
+    [:input.w-full#foo {:type "text" :name "name" :value name}]
+    [:.w-3]
+    [:button.btn {:type "submit"} "Update"]]))
+
 (defn set-name [{:keys [session params] :as ctx}]
   (biff/submit-tx ctx
     [{:db/op :update
       :db/doc-type :user
       :xt/id (:uid session)
       :user/name (:name params)}])
+  {:status 303
+   :headers {"location" "/app"}})
+
+(defn note-form [content]
+  (biff/form
+   {:action "/app/write-note"}
+   [:label.block {:for "note"} "Note: "
+    [:span.font-mono content]]
+   [:.h-1]
+   [:.flex
+    [:input.w-full#note {:type "text" :name "note" :value content}]
+    [:.w-3]
+    [:button.btn {:type "submit"} "Update"]]))
+
+(defn set-note [{:keys [session params] :as ctx}]
+  (let [note-id (random-uuid)]
+    (biff/submit-tx ctx
+                 [{:db/doc-type :note
+                   :xt/id note-id
+                   :note/owner (:uid session)
+                   :note/text (:note params)
+                   :note/timestamp (biff/now)}]))
   {:status 303
    :headers {"location" "/app"}})
 
@@ -91,8 +124,20 @@
      [:div#messages
       (map message (sort-by :msg/sent-at #(compare %2 %1) messages))]]))
 
+(defn notes-list [notes]
+  (if (seq notes)
+    [:div
+     [:.h-3]
+     [:div "Notes: "
+      (for [note notes]
+        [:div
+         (:note/text note)
+         [:.h-1]])]]
+    [:div "You have no notes."]))
+
+
 (defn app [{:keys [session biff/db] :as ctx}]
-  (let [{:user/keys [email name bar]} (xt/entity db (:uid session))]
+  (let [{:user/keys [email name content bar]} (xt/entity db (:uid session))]
     (ui/page
      {}
      [:div "Signed in as " email ". "
@@ -103,18 +148,12 @@
         "Sign out"])
       "."]
      [:.h-6]
-     (biff/form
-      {:action "/app/set-name"}
-      [:label.block {:for "name"} "Name: "
-       [:span.font-mono (pr-str name)]]
-      [:.h-1]
-      [:.flex
-       [:input.w-full#foo {:type "text" :name "name" :value name}]
-       [:.w-3]
-       [:button.btn {:type "submit"} "Update"]]
-      [:.h-1]
-      [:.text-sm.text-gray-600
-       "This demonstrates updating a value with a plain old form."])
+     (name-form name)
+     [:.h-6]
+     (note-form content)
+     [:.h-6]
+     (let [notes (biff/lookup-all db :note/owner (:uid session))]
+       (notes-list notes))
      [:.h-6]
      (bar-form {:value bar})
      [:.h-6]
@@ -147,6 +186,7 @@
    :routes ["/app" {:middleware [mid/wrap-signed-in]}
             ["" {:get app}]
             ["/set-name" {:post set-name}]
+            ["/write-note" {:post set-note}]
             ["/set-bar" {:post set-bar}]
             ["/chat" {:get ws-handler}]]
    :api-routes [["/api/echo" {:post echo}]]
