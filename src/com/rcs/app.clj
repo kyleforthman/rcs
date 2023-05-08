@@ -124,6 +124,20 @@
      [:div#messages
       (map message (sort-by :msg/sent-at #(compare %2 %1) messages))]]))
 
+(defn note-card [note]
+  (let [{:keys [xt/id note/owner note/title note/text note/timestamp]} note]
+    [:div {:class "w-1/3 md:w-1/4 lg:w-1/5 px-2 mb-4"}
+      [:div {:class "flex flex-col bg-white rounded-md shadow p-4 mb-2 w-full h-full"
+             :on-mouse-enter (str "document.getElementById('note-" id "-buttons').classList.remove('hidden');"
+                                  "document.getElementById('content-" id "').classList.add('hidden')")
+             :on-mouse-leave (str "document.getElementById('note-" id "-buttons').classList.add('hidden');"
+                                  "document.getElementById('content-" id "').classList.remove('hidden')")}
+        [:div {:id (str "content-" id)} text]
+        [:div {:id (str "note-" id "-buttons") :class '[flex flex-col hidden justify-center items-center]}
+          [:a.hover:underline {:href (str "/note/" id)} "View"]
+          [:a.hover:underline {:href (str "/note/" id "/edit")} "Edit"]
+          [:a.text-red-400.hover:underline {:href (str "/note/" id "/delete")} "Delete"]]]]))
+
 (defn notes-list [notes]
   (if (seq notes)
     [:div
@@ -131,20 +145,9 @@
      [:div "Notes: "
        [:div.flex.flex-wrap
          (for [note notes]
-           (let [content (:note/text note)
-                 note-id (:xt/id note)]
-             [:div {:class "w-1/3 md:w-1/4 lg:w-1/5 px-2 mb-4"}
-               [:div {:class "flex flex-col bg-white rounded-md shadow p-4 mb-2 w-full h-full"
-                      :on-mouse-enter (str "document.getElementById('note-" note-id "-buttons').classList.remove('hidden');"
-                                           "document.getElementById('content-" note-id "').classList.add('hidden')")
-                      :on-mouse-leave (str "document.getElementById('note-" note-id "-buttons').classList.add('hidden');"
-                                           "document.getElementById('content-" note-id "').classList.remove('hidden')")}
-                 [:div {:id (str "content-" note-id)} content]
-                 [:div {:id (str "note-" note-id "-buttons") :class '[flex flex-col hidden justify-center items-center]}
-                   [:a.hover:underline {:href (str "/note/" note-id)} "View"]
-                   [:a.hover:underline {:href (str "/note/" note-id "/edit")} "Edit"]
-                   [:a.text-red-400.hover:underline {:href (str "/note/" note-id "/delete")} "Delete"]]]]))]]]
+           (note-card note))]]]
     [:div "You have no notes."]))
+
 
 
 (defn app [{:keys [session biff/db] :as ctx}]
